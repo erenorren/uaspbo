@@ -51,7 +51,7 @@ paths:
               example:
                 success: true
                 status_code: 200
-                message: "Courses retrieved successfully"
+                message: "Kursus berhasil diambil"
                 data:
                   - id: 1
                     title: "PHP OOP Fundamentals"
@@ -335,19 +335,19 @@ paths:
                     success: false
                     status_code: 422
                     message: "Enrollment failed"
-                    errors: ["Course is full"]
+                    errors: ["Kursus sudah penuh"]
                 DuplicateEnrollment:
                   value:
                     success: false
                     status_code: 422
                     message: "Enrollment failed"
-                    errors: ["Student already enrolled in this course"]
+                    errors: ["Siswa sudah terdaftar di kursus ini"]
                 CourseNotPublished:
                   value:
                     success: false
                     status_code: 422
                     message: "Enrollment failed"
-                    errors: ["Course is not published"]
+                    errors: ["Kursus belum dipublikasikan"]
 
   /students/{id}/enrollments:
     get:
@@ -605,7 +605,7 @@ components:
             status_code: 404
             message: "Resource not found"
             data: null
-            errors: ["Course with ID 999 not found"]
+            errors: ["Kurses dengan ID 999 tidak ditemukan"]
 
     InternalServerError:
       description: Terjadi kesalahan server internal

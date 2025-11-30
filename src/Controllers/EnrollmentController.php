@@ -32,7 +32,7 @@ class EnrollmentController extends Controller
                 (int)$data['course_id']
             );
 
-            ApiResponseBuilder::created($enrollment->toArray(), 'Student enrolled successfully')->send();
+            ApiResponseBuilder::created($enrollment->toArray(), 'Siswa berhasil mendaftar')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();
@@ -51,7 +51,7 @@ class EnrollmentController extends Controller
             $enrollments = $this->enrollmentService->getStudentEnrollments($studentId);
             $data = array_map(fn($enrollment) => $enrollment->toArray(), $enrollments);
 
-            ApiResponseBuilder::success($data, 'Student enrollments retrieved successfully')
+            ApiResponseBuilder::success($data, 'Pendaftaran siswa berhasil diambil')
                 ->addMeta('total', count($data))
                 ->send();
 
@@ -66,7 +66,7 @@ class EnrollmentController extends Controller
     {
         try {
             $enrollment = $this->enrollmentService->completeEnrollment($id);
-            ApiResponseBuilder::success($enrollment->toArray(), 'Enrollment completed successfully')->send();
+            ApiResponseBuilder::success($enrollment->toArray(), 'Pendaftaran berhasil diselesaikan')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();
@@ -81,7 +81,7 @@ class EnrollmentController extends Controller
     {
         try {
             $enrollment = $this->enrollmentService->cancelEnrollment($id);
-            ApiResponseBuilder::success($enrollment->toArray(), 'Enrollment cancelled successfully')->send();
+            ApiResponseBuilder::success($enrollment->toArray(), 'Pendaftaran berhasil dibatalkan')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();

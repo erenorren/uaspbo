@@ -26,7 +26,7 @@ class CourseController extends Controller
 
             $data = array_map(fn($course) => $course->toArray(), $courses);
 
-            ApiResponseBuilder::success($data, 'Courses retrieved successfully')
+            ApiResponseBuilder::success($data, 'Kursus berhasil diambil')
                 ->addMeta('total', count($data))
                 ->send();
 
@@ -39,7 +39,7 @@ class CourseController extends Controller
     {
         try {
             $course = $this->courseService->getCourseById($id);
-            ApiResponseBuilder::success($course->toArray(), 'Course retrieved successfully')->send();
+            ApiResponseBuilder::success($course->toArray(), 'Kursus berhasil diambil')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();
@@ -54,7 +54,7 @@ class CourseController extends Controller
             $data = $this->getJsonInput();
             $course = $this->courseService->createCourse($data);
 
-            ApiResponseBuilder::created($course->toArray(), 'Course created successfully')->send();
+            ApiResponseBuilder::created($course->toArray(), 'Kursus berhasil diambil')->send();
 
         } catch (ValidationException $e) {
             ApiResponseBuilder::validationError($e->getErrors())->send();
@@ -71,7 +71,7 @@ class CourseController extends Controller
             $data = $this->getJsonInput();
             $course = $this->courseService->updateCourse($id, $data);
 
-            ApiResponseBuilder::success($course->toArray(), 'Course updated successfully')->send();
+            ApiResponseBuilder::success($course->toArray(), 'Kursus berhasil diubah')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();
@@ -88,7 +88,7 @@ class CourseController extends Controller
     {
         try {
             $this->courseService->deleteCourse($id);
-            ApiResponseBuilder::success(null, 'Course deleted successfully')->send();
+            ApiResponseBuilder::success(null, 'Kursus berhasil dihapus')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();
@@ -101,7 +101,7 @@ class CourseController extends Controller
     {
         try {
             $course = $this->courseService->publishCourse($id);
-            ApiResponseBuilder::success($course->toArray(), 'Course published successfully')->send();
+            ApiResponseBuilder::success($course->toArray(), 'Kursus berhasil dipublish')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();
@@ -114,7 +114,7 @@ class CourseController extends Controller
     {
         try {
             $course = $this->courseService->unpublishCourse($id);
-            ApiResponseBuilder::success($course->toArray(), 'Course unpublished successfully')->send();
+            ApiResponseBuilder::success($course->toArray(), 'Kursus berhasil unpublish')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();

@@ -31,28 +31,28 @@ class EnrollmentService
         // Validate student exists
         $student = $this->studentRepository->findById($studentId);
         if (!$student) {
-            throw new NotFoundException("Student with ID {$studentId} not found");
+            throw new NotFoundException("Siswa dengan ID {$studentId} tidak ditemukan");
         }
 
         // Validate course exists
         $course = $this->courseRepository->findById($courseId);
         if (!$course) {
-            throw new NotFoundException("Course with ID {$courseId} not found");
+            throw new NotFoundException("Kursus dengan ID {$courseId} tidak ditemukan");
         }
 
         // Business rules validation
         if (!$course->isPublished()) {
-            throw new BusinessException("Course is not published");
+            throw new BusinessException("Kursus belum dipublikasikan");
         }
 
         $enrolledCount = $this->courseRepository->getEnrolledCount($courseId);
         if (!$course->canEnroll($enrolledCount)) {
-            throw new BusinessException("Course is full");
+            throw new BusinessException("Kursus Penuh");
         }
 
         $isAlreadyEnrolled = $this->courseRepository->isStudentEnrolled($studentId, $courseId);
         if ($isAlreadyEnrolled) {
-            throw new BusinessException("Student is already enrolled in this course");
+            throw new BusinessException("Siswa sudah terdaftar dalam kursus ini");
         }
 
         // Create enrollment
@@ -76,11 +76,11 @@ class EnrollmentService
         $enrollment = $this->enrollmentRepository->findById($enrollmentId);
 
         if (!$enrollment) {
-            throw new NotFoundException("Enrollment with ID {$enrollmentId} not found");
+            throw new NotFoundException("Pendaftaran ID {$enrollmentId} tidak ditemukan");
         }
 
         if ($enrollment->getStatus() !== 'active') {
-            throw new BusinessException("Only active enrollments can be completed");
+            throw new BusinessException("Hanya pendaftaran aktif yang dapat diselesaikan");
         }
 
         $enrollment->complete();
@@ -94,11 +94,11 @@ class EnrollmentService
         $enrollment = $this->enrollmentRepository->findById($enrollmentId);
 
         if (!$enrollment) {
-            throw new NotFoundException("Enrollment with ID {$enrollmentId} not found");
+            throw new NotFoundException("Pendaftaran dengan ID {$enrollmentId} tidak ditemukan");
         }
 
         if ($enrollment->getStatus() !== 'active') {
-            throw new BusinessException("Only active enrollments can be cancelled");
+            throw new BusinessException("Hanya pendaftaran aktif yang dapat dibatalkan");
         }
 
         $enrollment->cancel();
@@ -111,7 +111,7 @@ class EnrollmentService
     {
         $student = $this->studentRepository->findById($studentId);
         if (!$student) {
-            throw new NotFoundException("Student with ID {$studentId} not found");
+            throw new NotFoundException("Siswa dengan ID {$studentId} tidak ditemukan");
         }
 
         return $this->enrollmentRepository->findByStudentId($studentId);
@@ -122,7 +122,7 @@ class EnrollmentService
         $enrollment = $this->enrollmentRepository->findById($id);
 
         if (!$enrollment) {
-            throw new NotFoundException("Enrollment with ID {$id} not found");
+            throw new NotFoundException("Pendaftaran dengan ID {$id} tidak ditemukan");
         }
 
         return $enrollment;

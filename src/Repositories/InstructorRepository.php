@@ -37,7 +37,7 @@ class InstructorRepository
     {
         $sql = "SELECT u.*, i.bio 
                 FROM users u 
-                JOIN instructors i ON u.id = i.id 
+                JOIN instructors i ON u.id = i.user_id 
                 WHERE u.role = 'instructor' 
                 ORDER BY u.created_at DESC";
 

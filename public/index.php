@@ -63,10 +63,11 @@ try {
     $router->get('/courses', [$courseController, 'index']);
     $router->get('/courses/:id', [$courseController, 'show']);
     $router->post('/courses', [$courseController, 'store']);
-    $router->put('/courses/:id', [$courseController, 'update']);
     $router->delete('/courses/:id', [$courseController, 'destroy']);
     $router->put('/courses/:id/publish', [$courseController, 'publish']);
     $router->put('/courses/:id/unpublish', [$courseController, 'unpublish']);
+    $router->put('/courses/:id', [$courseController, 'update']);
+
 
     // Student Routes
     $router->get('/students', [$studentController, 'index']);

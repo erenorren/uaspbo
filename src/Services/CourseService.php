@@ -24,10 +24,17 @@ class CourseService
 
     public function createCourse(array $data): Course
     {
+        // Validasi required fields
+        if (!isset($data['instructor_id']) || empty($data['instructor_id'])) {
+            throw new ValidationException('Validation failed', ['instructor_id' => 'Instructor ID is required']);
+        }
+
         // Validate instructor exists
-        $instructor = $this->instructorRepository->findById($data['instructor_id']);
+        $instructorId = (int)$data['instructor_id'];
+        $instructor = $this->instructorRepository->findById($instructorId);
+        
         if (!$instructor) {
-            throw new BusinessException("Instructor with ID {$data['instructor_id']} not found");
+            throw new BusinessException("Instructor with ID {$instructorId} not found");
         }
 
         $course = new Course($data);
@@ -51,9 +58,10 @@ class CourseService
 
         // Validate instructor if provided
         if (isset($data['instructor_id'])) {
-            $instructor = $this->instructorRepository->findById($data['instructor_id']);
+            $instructorId = (int)$data['instructor_id'];
+            $instructor = $this->instructorRepository->findById($instructorId);
             if (!$instructor) {
-                throw new BusinessException("Instructor with ID {$data['instructor_id']} not found");
+                throw new BusinessException("Instructor with ID {$instructorId} not found");
             }
         }
 

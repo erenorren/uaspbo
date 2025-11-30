@@ -25,7 +25,7 @@ class StudentController extends Controller
 
             $data = array_map(fn($student) => $student->toArray(), $students);
 
-            ApiResponseBuilder::success($data, 'Students retrieved successfully')
+            ApiResponseBuilder::success($data, 'Siswa berhasil diambil')
                 ->addMeta('total', count($data))
                 ->send();
 
@@ -38,7 +38,7 @@ class StudentController extends Controller
     {
         try {
             $student = $this->studentService->getStudentById($id);
-            ApiResponseBuilder::success($student->toArray(), 'Student retrieved successfully')->send();
+            ApiResponseBuilder::success($student->toArray(), 'Siswa berhasil diambil')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();
@@ -53,7 +53,7 @@ class StudentController extends Controller
             $data = $this->getJsonInput();
             $student = $this->studentService->createStudent($data);
 
-            ApiResponseBuilder::created($student->toArray(), 'Student created successfully')->send();
+            ApiResponseBuilder::created($student->toArray(), 'Siswa berhasil dibuat')->send();
 
         } catch (ValidationException $e) {
             ApiResponseBuilder::validationError($e->getErrors())->send();
@@ -68,7 +68,7 @@ class StudentController extends Controller
             $data = $this->getJsonInput();
             $student = $this->studentService->updateStudent($id, $data);
 
-            ApiResponseBuilder::success($student->toArray(), 'Student updated successfully')->send();
+            ApiResponseBuilder::success($student->toArray(), 'Siswa berhasil diperbarui')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();
@@ -83,7 +83,7 @@ class StudentController extends Controller
     {
         try {
             $this->studentService->deleteStudent($id);
-            ApiResponseBuilder::success(null, 'Student deleted successfully')->send();
+            ApiResponseBuilder::success(null, 'Siswa berhasil dihapus')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();
