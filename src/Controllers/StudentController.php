@@ -64,10 +64,10 @@ class StudentController extends Controller
         }
     }
 
-    public function update( Request $request, int $id): void
+    public function update(Request $request, int $id): void
     {
         try {
-            $data = $this->getJsonInput();
+            $data = $request->getBodyParams();
             $student = $this->studentService->updateStudent($id, $data);
 
             ApiResponseBuilder::success($student->toArray(), 'Student updated successfully')

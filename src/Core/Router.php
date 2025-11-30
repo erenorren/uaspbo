@@ -36,50 +36,61 @@ class Router
     }
 
     public function dispatch(): void
-    {
-        $request = new Request();
-        $method = $request->getMethod();
-        $uri = $request->getPath();
+{
+    $request = new Request();
+    $method = $request->getMethod();
+    $uri = $request->getPath();
 
-        // Remove base path if exists
-        $basePath = '/api';
-        if (strpos($uri, $basePath) === 0) {
-            $uri = substr($uri, strlen($basePath));
-        }
-
-        // Handle root path
-        if ($uri === '' || $uri === '/') {
-            $uri = '/';
-        }
-
-        foreach ($this->routes as $route) {
-            if ($route['method'] !== $method) {
-                continue;
-            }
-
-            $pattern = $this->convertPathToRegex($route['path']);
-
-            if (preg_match($pattern, $uri, $matches)) {
-                array_shift($matches); // Remove full match
-                
-                // Pass request object as first parameter
-                array_unshift($matches, $request);
-                
-                call_user_func_array($route['handler'], $matches);
-                return;
-            }
-        }
-
-        // Route not found
-        $response = new Response();
-        $response->json([
-            'success' => false,
-            'status_code' => 404,
-            'message' => 'Endpoint not found',
-            'requested_path' => $uri,
-            'request_method' => $method
-        ], 404);
+    // Remove base path if exists
+    $basePath = '/api';
+    if (strpos($uri, $basePath) === 0) {
+        $uri = substr($uri, strlen($basePath));
     }
+
+    // Handle root path
+    if ($uri === '' || $uri === '/') {
+        $uri = '/';
+    }
+
+    foreach ($this->routes as $route) {
+        if ($route['method'] !== $method) {
+            continue;
+        }
+
+        $pattern = $this->convertPathToRegex($route['path']);
+
+        if (preg_match($pattern, $uri, $matches)) {
+            // Extract named parameters
+            $params = [];
+            foreach ($matches as $key => $value) {
+                if (is_string($key)) {
+                    $params[$key] = $value;
+                }
+            }
+
+            // Pass parameters to handler
+            $handlerParams = [$request];
+            
+            // Add ID parameter if exists
+            if (isset($params['id'])) {
+                $handlerParams[] = (int)$params['id'];
+            }
+
+            call_user_func_array($route['handler'], $handlerParams);
+            return;
+        }
+    }
+
+    // Route not found
+    $response = new Response();
+    $response->json([
+        'success' => false,
+        'status_code' => 404,
+        'message' => 'Endpoint not found',
+        'requested_path' => $uri,
+        'request_method' => $method
+    ], 404);
+}
 
     private function convertPathToRegex(string $path): string
     {

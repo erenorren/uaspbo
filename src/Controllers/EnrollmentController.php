@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Request;
 use App\Services\EnrollmentService;
 use App\Builders\ApiResponseBuilder;
 use App\Exceptions\ValidationException;
@@ -18,10 +19,10 @@ class EnrollmentController extends Controller
         $this->enrollmentService = $enrollmentService;
     }
 
-    public function store(): void
+    public function store(Request $request): void
     {
         try {
-            $data = $this->getJsonInput();
+            $data = $request->getBodyParams();
 
             if (!isset($data['student_id']) || !isset($data['course_id'])) {
                 ApiResponseBuilder::error('student_id and course_id are required', 400)->send();
@@ -46,7 +47,7 @@ class EnrollmentController extends Controller
         }
     }
 
-    public function studentEnrollments(int $studentId): void
+    public function studentEnrollments(Request $request, int $studentId): void
     {
         try {
             $enrollments = $this->enrollmentService->getStudentEnrollments($studentId);
@@ -63,10 +64,13 @@ class EnrollmentController extends Controller
         }
     }
 
-    public function complete(int $id): void
+    public function complete(Request $request, int $id): void
     {
         try {
-            $enrollment = $this->enrollmentService->completeEnrollment($id);
+            $data = $request->getBodyParams();
+            $grade = $data['grade'] ?? null;
+            
+            $enrollment = $this->enrollmentService->completeEnrollment($id, $grade);
 
             ApiResponseBuilder::success($enrollment->toArray(), 'Enrollment completed successfully')
                 ->send();
@@ -78,7 +82,7 @@ class EnrollmentController extends Controller
         }
     }
 
-    public function cancel(int $id): void
+    public function cancel(Request $request, int $id): void
     {
         try {
             $enrollment = $this->enrollmentService->cancelEnrollment($id);

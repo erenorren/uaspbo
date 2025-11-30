@@ -65,19 +65,19 @@ class EnrollmentService
         return $enrollment;
     }
 
-    public function completeEnrollment(int $enrollmentId): Enrollment
-    {
-        $enrollment = $this->enrollmentRepository->findById($enrollmentId);
+    public function completeEnrollment(int $enrollmentId, ?float $grade = null): Enrollment
+{
+    $enrollment = $this->enrollmentRepository->findById($enrollmentId);
 
-        if (!$enrollment) {
-            throw new NotFoundException("Enrollment with ID {$enrollmentId} not found");
-        }
-
-        $enrollment->complete();
-        $this->enrollmentRepository->save($enrollment);
-
-        return $enrollment;
+    if (!$enrollment) {
+        throw new NotFoundException("Enrollment with ID {$enrollmentId} not found");
     }
+
+    $enrollment->complete($grade);
+    $this->enrollmentRepository->save($enrollment);
+
+    return $enrollment;
+}
 
     public function cancelEnrollment(int $enrollmentId): Enrollment
     {
