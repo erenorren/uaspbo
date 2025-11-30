@@ -77,18 +77,18 @@ class CourseRepository
     }
 
     private function hydrate(array $data): Course
-    {
-        $course = new Course($data);
-        $course->setId((int)$data['id']);
+{
+    $course = new Course($data);
+    $course->setId((int)$data['id']);
 
-        if (isset($data['created_at'])) {
-            $course->setCreatedAt(new \DateTime($data['created_at']));
-        }
-
-        if (isset($data['updated_at'])) {
-            $course->setUpdatedAt(new \DateTime($data['updated_at']));
-        }
-
-        return $course;
+    if (isset($data['created_at'])) {
+        $course->setCreatedAt(new \DateTime($data['created_at']));
     }
+
+    if (isset($data['updated_at'])) {
+        $course->setUpdatedAt(new \DateTime($data['updated_at']));
+    }
+
+    return $course;
+}
 }

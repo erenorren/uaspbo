@@ -62,18 +62,18 @@ class StudentRepository
     }
 
     private function hydrate(array $data): Student
-    {
-        $student = new Student($data);
-        $student->setId((int)$data['id']);
+{
+    $student = new Student($data);
+    $student->setId((int)$data['id']);
 
-        if (isset($data['created_at'])) {
-            $student->setCreatedAt(new \DateTime($data['created_at']));
-        }
-
-        if (isset($data['updated_at'])) {
-            $student->setUpdatedAt(new \DateTime($data['updated_at']));
-        }
-
-        return $student;
+    if (isset($data['created_at'])) {
+        $student->setCreatedAt(new \DateTime($data['created_at']));
     }
+
+    if (isset($data['updated_at'])) {
+        $student->setUpdatedAt(new \DateTime($data['updated_at']));
+    }
+
+    return $student;
+}
 }
