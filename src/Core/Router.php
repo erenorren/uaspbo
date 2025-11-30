@@ -47,6 +47,11 @@ class Router
             $uri = substr($uri, strlen($basePath));
         }
 
+        // Handle root path
+        if ($uri === '' || $uri === '/') {
+            $uri = '/';
+        }
+
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method) {
                 continue;
@@ -59,6 +64,7 @@ class Router
                 
                 // Pass request object as first parameter
                 array_unshift($matches, $request);
+                
                 call_user_func_array($route['handler'], $matches);
                 return;
             }
@@ -69,7 +75,9 @@ class Router
         $response->json([
             'success' => false,
             'status_code' => 404,
-            'message' => 'Endpoint not found'
+            'message' => 'Endpoint not found',
+            'requested_path' => $uri,
+            'request_method' => $method
         ], 404);
     }
 

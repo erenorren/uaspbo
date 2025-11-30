@@ -19,10 +19,10 @@ class CourseController extends Controller
         $this->courseService = $courseService;
     }
 
-    public function index(): void
+    public function index(Request $request): void
     {
         try {
-            $filters = $this->getQueryParams();
+            $filters = $request->getQueryParams();
             $courses = $this->courseService->getAllCourses($filters);
 
             $data = array_map(fn($course) => $course->toArray(), $courses);
@@ -36,20 +36,28 @@ class CourseController extends Controller
         }
     }
 
-    public function show(Request $request, int $id): void
-    {
-        try {
-            $course = $this->courseService->getCourseById($id);
-            
-            ApiResponseBuilder::success($course->toArray(), 'Course retrieved successfully')
-                ->send();
-
-        } catch (NotFoundException $e) {
-            ApiResponseBuilder::notFound($e->getMessage())->send();
-        } catch (\Exception $e) {
-            ApiResponseBuilder::error($e->getMessage(), 500)->send();
+    public function show(Request $request): void
+{
+    try {
+        // Get ID dari URL parameter
+        $id = (int) $request->getQueryParams()['id'] ?? 0;
+        
+        if ($id <= 0) {
+            ApiResponseBuilder::error('Invalid course ID', 400)->send();
+            return;
         }
+
+        $course = $this->courseService->getCourseById($id);
+        
+        ApiResponseBuilder::success($course->toArray(), 'Course retrieved successfully')
+            ->send();
+
+    } catch (NotFoundException $e) {
+        ApiResponseBuilder::notFound($e->getMessage())->send();
+    } catch (\Exception $e) {
+        ApiResponseBuilder::error($e->getMessage(), 500)->send();
     }
+}
 
     public function store(Request $request): void
     {

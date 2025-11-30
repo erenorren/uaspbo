@@ -4,7 +4,7 @@ return [
     'host' => 'localhost',
     'database' => 'elearning_db',
     'username' => 'root',
-    'password' => '',
+    'password' => 'Sh3Belajar!SQL',
     'charset' => 'utf8mb4',
     'options' => [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

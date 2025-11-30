@@ -60,15 +60,4 @@ class Request
         
         return $this->serverParams[$key] ?? null;
     }
-
-    public function getBearerToken(): ?string
-    {
-        $authorization = $this->getHeader('Authorization');
-        
-        if ($authorization && preg_match('/Bearer\s+(.+)/', $authorization, $matches)) {
-            return $matches[1];
-        }
-        
-        return null;
-    }
 }
