@@ -41,6 +41,12 @@ class InstructorRepository
         return $instructor->save();
     }
 
+    public function delete(int $id): bool
+{
+    $instructor = $this->findById($id);
+    return $instructor ? $instructor->delete() : false;
+}
+
     private function hydrate(array $data): Instructor
     {
         $instructor = new Instructor($data);

@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Request;
 use App\Services\StudentService;
 use App\Builders\ApiResponseBuilder;
 use App\Exceptions\ValidationException;
@@ -17,7 +18,7 @@ class StudentController extends Controller
         $this->studentService = $studentService;
     }
 
-    public function index(): void
+    public function index(Request $request): void
     {
         try {
             $students = $this->studentService->getAllStudents();
@@ -32,7 +33,7 @@ class StudentController extends Controller
         }
     }
 
-    public function show(int $id): void
+    public function show(Request $request, int $id): void
     {
         try {
             $student = $this->studentService->getStudentById($id);
@@ -47,10 +48,10 @@ class StudentController extends Controller
         }
     }
 
-    public function store(): void
+    public function store(Request $request): void
     {
         try {
-            $data = $this->getJsonInput();
+            $data = $request->getBodyParams();
             $student = $this->studentService->createStudent($data);
 
             ApiResponseBuilder::created($student->toArray(), 'Student created successfully')
@@ -63,7 +64,7 @@ class StudentController extends Controller
         }
     }
 
-    public function update(int $id): void
+    public function update( Request $request, int $id): void
     {
         try {
             $data = $this->getJsonInput();
@@ -81,7 +82,7 @@ class StudentController extends Controller
         }
     }
 
-    public function destroy(int $id): void
+    public function destroy(Request $request, int $id): void
     {
         try {
             $this->studentService->deleteStudent($id);

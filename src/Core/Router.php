@@ -37,9 +37,11 @@ class Router
 
     public function dispatch(): void
     {
-        $method = $_SERVER['REQUEST_METHOD'];
-        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $request = new Request();
+        $method = $request->getMethod();
+        $uri = $request->getPath();
 
+        // Remove base path if exists
         $basePath = '/api';
         if (strpos($uri, $basePath) === 0) {
             $uri = substr($uri, strlen($basePath));
@@ -53,18 +55,22 @@ class Router
             $pattern = $this->convertPathToRegex($route['path']);
 
             if (preg_match($pattern, $uri, $matches)) {
-                array_shift($matches);
+                array_shift($matches); // Remove full match
+                
+                // Pass request object as first parameter
+                array_unshift($matches, $request);
                 call_user_func_array($route['handler'], $matches);
                 return;
             }
         }
 
-        http_response_code(404);
-        echo json_encode([
+        // Route not found
+        $response = new Response();
+        $response->json([
             'success' => false,
             'status_code' => 404,
             'message' => 'Endpoint not found'
-        ]);
+        ], 404);
     }
 
     private function convertPathToRegex(string $path): string

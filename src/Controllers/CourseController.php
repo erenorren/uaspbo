@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Request;
 use App\Services\CourseService;
 use App\Builders\ApiResponseBuilder;
 use App\Exceptions\ValidationException;
@@ -35,7 +36,7 @@ class CourseController extends Controller
         }
     }
 
-    public function show(int $id): void
+    public function show(Request $request, int $id): void
     {
         try {
             $course = $this->courseService->getCourseById($id);
@@ -50,10 +51,10 @@ class CourseController extends Controller
         }
     }
 
-    public function store(): void
+    public function store(Request $request): void
     {
         try {
-            $data = $this->getJsonInput();
+            $data = $request->getBodyParams();
             $course = $this->courseService->createCourse($data);
 
             ApiResponseBuilder::created($course->toArray(), 'Course created successfully')
@@ -66,10 +67,10 @@ class CourseController extends Controller
         }
     }
 
-    public function update(int $id): void
+    public function update(Request $request, int $id): void
     {
         try {
-            $data = $this->getJsonInput();
+            $data = $request->getBodyParams();
             $course = $this->courseService->updateCourse($id, $data);
 
             ApiResponseBuilder::success($course->toArray(), 'Course updated successfully')
@@ -84,7 +85,7 @@ class CourseController extends Controller
         }
     }
 
-    public function destroy(int $id): void
+    public function destroy(Request $request, int $id): void
     {
         try {
             $this->courseService->deleteCourse($id);
@@ -99,7 +100,7 @@ class CourseController extends Controller
         }
     }
 
-    public function publish(int $id): void
+    public function publish(Request $request, int $id): void
     {
         try {
             $course = $this->courseService->publishCourse($id);
@@ -114,7 +115,7 @@ class CourseController extends Controller
         }
     }
 
-    public function unpublish(int $id): void
+    public function unpublish(Request $request, int $id): void
     {
         try {
             $course = $this->courseService->unpublishCourse($id);

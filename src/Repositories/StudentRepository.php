@@ -41,6 +41,13 @@ class StudentRepository
         return $student->save();
     }
 
+    // TAMBAHKAN METHOD DELETE INI
+    public function delete(int $id): bool
+    {
+        $student = $this->findById($id);
+        return $student ? $student->delete() : false;
+    }
+
     public function hasActiveEnrollment(int $studentId, int $courseId): bool
     {
         $stmt = $this->db->prepare("
