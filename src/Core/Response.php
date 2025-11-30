@@ -26,26 +26,32 @@ class Response
         return $this;
     }
 
-    public function json($data, int $statusCode = 200): void
+    public function json($data, int $statusCode = 200): self
     {
         $this->setStatusCode($statusCode)
-            ->setHeader('Content-Type', 'application/json')
-            ->setBody(json_encode($data, JSON_PRETTY_PRINT))
-            ->send();
+             ->setHeader('Content-Type', 'application/json')
+             ->setBody(json_encode($data, JSON_PRETTY_PRINT));
+        
+        return $this;
     }
 
     public function send(): void
     {
         http_response_code($this->statusCode);
-
+        
         foreach ($this->headers as $name => $value) {
             header("{$name}: {$value}");
         }
-
+        
         if ($this->body !== null) {
             echo $this->body;
         }
-
+        
         exit;
+    }
+
+    public static function make(): self
+    {
+        return new self();
     }
 }

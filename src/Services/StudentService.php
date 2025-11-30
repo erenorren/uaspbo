@@ -6,6 +6,8 @@ use App\Repositories\StudentRepository;
 use App\Models\Student;
 use App\Exceptions\ValidationException;
 use App\Exceptions\NotFoundException;
+use App\Exceptions\BusinessException;
+use App\Core\Database;
 
 class StudentService
 {
@@ -16,8 +18,24 @@ class StudentService
         $this->studentRepository = $studentRepository;
     }
 
+    public function isEmailExists(string $email): bool
+    {
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT COUNT(*) as count FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $result = $stmt->fetch();
+        
+        return $result['count'] > 0;
+    }
+
     public function createStudent(array $data): Student
     {
+        // Check if email already exists
+        if ($this->isEmailExists($data['email'])) {
+            throw new BusinessException("Email already exists");
+        }
+
+        $data['role'] = 'student';
         $student = new Student($data);
 
         if (!$student->validate()) {
@@ -37,6 +55,14 @@ class StudentService
             throw new NotFoundException("Student with ID {$id} not found");
         }
 
+        // Check if email is being changed and if it already exists
+        if (isset($data['email']) && $data['email'] !== $student->getEmail()) {
+            if ($this->isEmailExists($data['email'])) {
+                throw new BusinessException("Email already exists");
+            }
+        }
+
+        // Update properties
         $updatedStudent = new Student(array_merge($student->toArray(), $data));
         $updatedStudent->setId($id);
 
@@ -71,8 +97,8 @@ class StudentService
         return $student;
     }
 
-    public function getAllStudents(): array
+    public function getAllStudents(array $filters = []): array
     {
-        return $this->studentRepository->findAll();
+        return $this->studentRepository->findAll($filters);
     }
 }

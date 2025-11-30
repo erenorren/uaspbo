@@ -17,17 +17,33 @@ class InstructorRepository
 
     public function findById(int $id): ?Instructor
     {
-        $stmt = $this->db->prepare("SELECT * FROM instructors WHERE id = ?");
+        $sql = "SELECT u.*, i.bio 
+                FROM users u 
+                JOIN instructors i ON u.id = i.id 
+                WHERE u.id = ? AND u.role = 'instructor'";
+        
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$id]);
         $data = $stmt->fetch();
 
-        return $data ? $this->hydrate($data) : null;
+        if (!$data) {
+            return null;
+        }
+
+        return $this->hydrate($data);
     }
 
     public function findAll(): array
     {
-        $stmt = $this->db->query("SELECT * FROM instructors ORDER BY created_at DESC");
-        
+        $sql = "SELECT u.*, i.bio 
+                FROM users u 
+                JOIN instructors i ON u.id = i.id 
+                WHERE u.role = 'instructor' 
+                ORDER BY u.created_at DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+
         $instructors = [];
         while ($data = $stmt->fetch()) {
             $instructors[] = $this->hydrate($data);
@@ -41,15 +57,13 @@ class InstructorRepository
         return $instructor->save();
     }
 
-    public function delete(int $id): bool
-{
-    $instructor = $this->findById($id);
-    return $instructor ? $instructor->delete() : false;
-}
-
     private function hydrate(array $data): Instructor
     {
-        $instructor = new Instructor($data);
+        $instructor = new Instructor([
+            'email' => $data['email'],
+            'name' => $data['name'],
+            'bio' => $data['bio']
+        ]);
         $instructor->setId((int)$data['id']);
 
         if (isset($data['created_at'])) {

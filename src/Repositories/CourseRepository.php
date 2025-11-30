@@ -21,7 +21,11 @@ class CourseRepository
         $stmt->execute([$id]);
         $data = $stmt->fetch();
 
-        return $data ? $this->hydrate($data) : null;
+        if (!$data) {
+            return null;
+        }
+
+        return $this->hydrate($data);
     }
 
     public function findAll(array $filters = []): array
@@ -37,6 +41,11 @@ class CourseRepository
         if (isset($filters['instructor_id'])) {
             $sql .= " AND instructor_id = ?";
             $params[] = $filters['instructor_id'];
+        }
+
+        if (isset($filters['title'])) {
+            $sql .= " AND title LIKE ?";
+            $params[] = "%{$filters['title']}%";
         }
 
         $sql .= " ORDER BY created_at DESC";
@@ -60,10 +69,14 @@ class CourseRepository
     public function delete(int $id): bool
     {
         $course = $this->findById($id);
-        return $course ? $course->delete() : false;
+        if (!$course) {
+            return false;
+        }
+
+        return $course->delete();
     }
 
-    public function countEnrollments(int $courseId): int
+    public function getEnrolledCount(int $courseId): int
     {
         $stmt = $this->db->prepare("
             SELECT COUNT(*) as count 
@@ -72,23 +85,42 @@ class CourseRepository
         ");
         $stmt->execute([$courseId]);
         $result = $stmt->fetch();
-        
-        return $result['count'] ?? 0;
+
+        return (int)$result['count'];
+    }
+
+    public function isStudentEnrolled(int $studentId, int $courseId): bool
+    {
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) as count 
+            FROM enrollments 
+            WHERE student_id = ? AND course_id = ? AND status = 'active'
+        ");
+        $stmt->execute([$studentId, $courseId]);
+        $result = $stmt->fetch();
+
+        return (int)$result['count'] > 0;
     }
 
     private function hydrate(array $data): Course
-{
-    $course = new Course($data);
-    $course->setId((int)$data['id']);
+    {
+        $course = new Course([
+            'title' => $data['title'],
+            'description' => $data['description'],
+            'max_students' => (int)$data['max_students'],
+            'status' => $data['status'],
+            'instructor_id' => (int)$data['instructor_id']
+        ]);
+        $course->setId((int)$data['id']);
 
-    if (isset($data['created_at'])) {
-        $course->setCreatedAt(new \DateTime($data['created_at']));
+        if (isset($data['created_at'])) {
+            $course->setCreatedAt(new \DateTime($data['created_at']));
+        }
+
+        if (isset($data['updated_at'])) {
+            $course->setUpdatedAt(new \DateTime($data['updated_at']));
+        }
+
+        return $course;
     }
-
-    if (isset($data['updated_at'])) {
-        $course->setUpdatedAt(new \DateTime($data['updated_at']));
-    }
-
-    return $course;
-}
 }

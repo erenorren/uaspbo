@@ -15,12 +15,9 @@ abstract class User extends Model implements Authenticatable
     protected string $name;
     protected string $role;
 
-    public function __construct(array $data = [])
-    {
-        if (!empty($data)) {
-            $this->fill($data);
-        }
-    }
+    // Constructor sudah diwarisi dari Model
+
+    abstract public function getRole(): string;
 
     protected function fill(array $data): void
     {
@@ -50,12 +47,10 @@ abstract class User extends Model implements Authenticatable
         $this->validateRequired('email', $this->email, 'Email');
         $this->validateEmail('email', $this->email);
         $this->validateRequired('name', $this->name, 'Name');
-        $this->validateMinLength('password', $this->password, 6, 'Password');
+        $this->validateMinLength('name', $this->name, 2, 'Name');
 
         return !$this->hasErrors();
     }
-
-    abstract public function getRole(): string;
 
     public function getEmail(): string { return $this->email; }
     public function getName(): string { return $this->name; }
@@ -70,5 +65,52 @@ abstract class User extends Model implements Authenticatable
             'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s')
         ];
+    }
+
+    protected static function getTableName(): string
+    {
+        return 'users';
+    }
+
+    protected function insert(): bool
+    {
+        $db = \App\Core\Database::getInstance()->getConnection();
+        $sql = "INSERT INTO users (email, password, name, role, created_at) VALUES (?, ?, ?, ?, ?)";
+
+        $stmt = $db->prepare($sql);
+        $result = $stmt->execute([
+            $this->email,
+            $this->password,
+            $this->name,
+            $this->getRole(),
+            $this->createdAt->format('Y-m-d H:i:s')
+        ]);
+
+        if ($result) {
+            $this->id = (int)$db->lastInsertId();
+        }
+
+        return $result;
+    }
+
+    protected function update(): bool
+    {
+        $db = \App\Core\Database::getInstance()->getConnection();
+        $sql = "UPDATE users SET email=?, name=?, updated_at=? WHERE id=?";
+
+        $stmt = $db->prepare($sql);
+        return $stmt->execute([
+            $this->email,
+            $this->name,
+            $this->updatedAt->format('Y-m-d H:i:s'),
+            $this->id
+        ]);
+    }
+
+    public function delete(): bool
+    {
+        $db = \App\Core\Database::getInstance()->getConnection();
+        $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
+        return $stmt->execute([$this->id]);
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Core\Request;
 use App\Services\StudentService;
 use App\Builders\ApiResponseBuilder;
 use App\Exceptions\ValidationException;
@@ -18,10 +17,12 @@ class StudentController extends Controller
         $this->studentService = $studentService;
     }
 
-    public function index(Request $request): void
+    public function index(): void
     {
         try {
-            $students = $this->studentService->getAllStudents();
+            $filters = $this->getQueryParams();
+            $students = $this->studentService->getAllStudents($filters);
+
             $data = array_map(fn($student) => $student->toArray(), $students);
 
             ApiResponseBuilder::success($data, 'Students retrieved successfully')
@@ -33,13 +34,11 @@ class StudentController extends Controller
         }
     }
 
-    public function show(Request $request, int $id): void
+    public function show(int $id): void
     {
         try {
             $student = $this->studentService->getStudentById($id);
-            
-            ApiResponseBuilder::success($student->toArray(), 'Student retrieved successfully')
-                ->send();
+            ApiResponseBuilder::success($student->toArray(), 'Student retrieved successfully')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();
@@ -48,14 +47,13 @@ class StudentController extends Controller
         }
     }
 
-    public function store(Request $request): void
+    public function store(): void
     {
         try {
-            $data = $request->getBodyParams();
+            $data = $this->getJsonInput();
             $student = $this->studentService->createStudent($data);
 
-            ApiResponseBuilder::created($student->toArray(), 'Student created successfully')
-                ->send();
+            ApiResponseBuilder::created($student->toArray(), 'Student created successfully')->send();
 
         } catch (ValidationException $e) {
             ApiResponseBuilder::validationError($e->getErrors())->send();
@@ -64,14 +62,13 @@ class StudentController extends Controller
         }
     }
 
-    public function update(Request $request, int $id): void
+    public function update(int $id): void
     {
         try {
-            $data = $request->getBodyParams();
+            $data = $this->getJsonInput();
             $student = $this->studentService->updateStudent($id, $data);
 
-            ApiResponseBuilder::success($student->toArray(), 'Student updated successfully')
-                ->send();
+            ApiResponseBuilder::success($student->toArray(), 'Student updated successfully')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();
@@ -82,13 +79,11 @@ class StudentController extends Controller
         }
     }
 
-    public function destroy(Request $request, int $id): void
+    public function destroy(int $id): void
     {
         try {
             $this->studentService->deleteStudent($id);
-
-            ApiResponseBuilder::success(null, 'Student deleted successfully')
-                ->send();
+            ApiResponseBuilder::success(null, 'Student deleted successfully')->send();
 
         } catch (NotFoundException $e) {
             ApiResponseBuilder::notFound($e->getMessage())->send();

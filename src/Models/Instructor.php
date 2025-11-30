@@ -6,39 +6,19 @@ use App\Core\Database;
 
 class Instructor extends User
 {
-    private string $instructorCode;
-    private string $phone;
-    private string $expertise;
+    private string $bio;
+
+    // Constructor sudah diwarisi dari Model
 
     protected function fill(array $data): void
     {
         parent::fill($data);
-        $this->instructorCode = $data['instructor_code'] ?? $this->generateInstructorCode();
-        $this->phone = $data['phone'] ?? '';
-        $this->expertise = $data['expertise'] ?? '';
+        $this->bio = $data['bio'] ?? '';
     }
 
     public function getRole(): string
     {
         return 'instructor';
-    }
-
-    public function validate(): bool
-    {
-        $this->clearErrors();
-
-        $this->validateRequired('email', $this->email, 'Email');
-        $this->validateEmail('email', $this->email);
-        $this->validateRequired('name', $this->name, 'Name');
-        $this->validateRequired('phone', $this->phone, 'Phone');
-        $this->validateRequired('expertise', $this->expertise, 'Expertise');
-
-        return !$this->hasErrors();
-    }
-
-    private function generateInstructorCode(): string
-    {
-        return 'INS' . date('Y') . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
     }
 
     protected static function getTableName(): string
@@ -48,64 +28,51 @@ class Instructor extends User
 
     protected function insert(): bool
     {
-        $db = Database::getInstance()->getConnection();
-        
-        $sql = "INSERT INTO instructors (instructor_code, email, password, name, phone, expertise, created_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-        $stmt = $db->prepare($sql);
-        $result = $stmt->execute([
-            $this->instructorCode,
-            $this->email,
-            $this->password,
-            $this->name,
-            $this->phone,
-            $this->expertise,
-            $this->createdAt->format('Y-m-d H:i:s')
-        ]);
-
-        if ($result) {
-            $this->id = (int)$db->lastInsertId();
+        // First insert into users table
+        if (!parent::insert()) {
+            return false;
         }
 
-        return $result;
+        // Then insert into instructors table
+        $db = Database::getInstance()->getConnection();
+        $sql = "INSERT INTO instructors (id, bio) VALUES (?, ?)";
+
+        $stmt = $db->prepare($sql);
+        return $stmt->execute([
+            $this->id,
+            $this->bio
+        ]);
     }
 
     protected function update(): bool
     {
+        // Update users table
+        if (!parent::update()) {
+            return false;
+        }
+
+        // Update instructors table
         $db = Database::getInstance()->getConnection();
-        
-        $sql = "UPDATE instructors SET email=?, name=?, phone=?, expertise=?, updated_at=? WHERE id=?";
+        $sql = "UPDATE instructors SET bio=? WHERE id=?";
 
         $stmt = $db->prepare($sql);
         return $stmt->execute([
-            $this->email,
-            $this->name,
-            $this->phone,
-            $this->expertise,
-            $this->updatedAt->format('Y-m-d H:i:s'),
+            $this->bio,
             $this->id
         ]);
     }
 
     public function delete(): bool
     {
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("DELETE FROM instructors WHERE id = ?");
-        return $stmt->execute([$this->id]);
+        return parent::delete();
     }
 
     public function toArray(): array
     {
         $data = parent::toArray();
-        $data['instructor_code'] = $this->instructorCode;
-        $data['phone'] = $this->phone;
-        $data['expertise'] = $this->expertise;
+        $data['bio'] = $this->bio;
         return $data;
     }
 
-    // Getters
-    public function getInstructorCode(): string { return $this->instructorCode; }
-    public function getPhone(): string { return $this->phone; }
-    public function getExpertise(): string { return $this->expertise; }
+    public function getBio(): string { return $this->bio; }
 }

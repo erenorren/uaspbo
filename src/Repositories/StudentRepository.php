@@ -17,17 +17,40 @@ class StudentRepository
 
     public function findById(int $id): ?Student
     {
-        $stmt = $this->db->prepare("SELECT * FROM students WHERE id = ?");
+        $sql = "SELECT u.*, s.student_number 
+                FROM users u 
+                JOIN students s ON u.id = s.id 
+                WHERE u.id = ? AND u.role = 'student'";
+        
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$id]);
         $data = $stmt->fetch();
 
-        return $data ? $this->hydrate($data) : null;
+        if (!$data) {
+            return null;
+        }
+
+        return $this->hydrate($data);
     }
 
-    public function findAll(): array
+    public function findAll(array $filters = []): array
     {
-        $stmt = $this->db->query("SELECT * FROM students ORDER BY created_at DESC");
-        
+        $sql = "SELECT u.*, s.student_number 
+                FROM users u 
+                JOIN students s ON u.id = s.id 
+                WHERE u.role = 'student'";
+        $params = [];
+
+        if (isset($filters['student_number'])) {
+            $sql .= " AND s.student_number LIKE ?";
+            $params[] = "%{$filters['student_number']}%";
+        }
+
+        $sql .= " ORDER BY u.created_at DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
         $students = [];
         while ($data = $stmt->fetch()) {
             $students[] = $this->hydrate($data);
@@ -41,39 +64,34 @@ class StudentRepository
         return $student->save();
     }
 
-    // TAMBAHKAN METHOD DELETE INI
     public function delete(int $id): bool
     {
         $student = $this->findById($id);
-        return $student ? $student->delete() : false;
-    }
+        if (!$student) {
+            return false;
+        }
 
-    public function hasActiveEnrollment(int $studentId, int $courseId): bool
-    {
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) as count 
-            FROM enrollments 
-            WHERE student_id = ? AND course_id = ? AND status = 'active'
-        ");
-        $stmt->execute([$studentId, $courseId]);
-        $result = $stmt->fetch();
-        
-        return ($result['count'] ?? 0) > 0;
+        return $student->delete();
     }
 
     private function hydrate(array $data): Student
-{
-    $student = new Student($data);
-    $student->setId((int)$data['id']);
+    {
+        $student = new Student([
+            'email' => $data['email'],
+            'name' => $data['name'],
+            'student_number' => $data['student_number'],
+            'password' => '' // Password tidak dihydrate untuk keamanan
+        ]);
+        $student->setId((int)$data['id']);
 
-    if (isset($data['created_at'])) {
-        $student->setCreatedAt(new \DateTime($data['created_at']));
+        if (isset($data['created_at'])) {
+            $student->setCreatedAt(new \DateTime($data['created_at']));
+        }
+
+        if (isset($data['updated_at'])) {
+            $student->setUpdatedAt(new \DateTime($data['updated_at']));
+        }
+
+        return $student;
     }
-
-    if (isset($data['updated_at'])) {
-        $student->setUpdatedAt(new \DateTime($data['updated_at']));
-    }
-
-    return $student;
-}
 }

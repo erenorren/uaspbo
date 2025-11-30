@@ -4,25 +4,14 @@ namespace App\Core;
 
 class Request
 {
-    private array $queryParams;
-    private array $bodyParams;
-    private array $serverParams;
-
-    public function __construct()
-    {
-        $this->queryParams = $_GET;
-        $this->bodyParams = $this->getJsonBody() ?? $_POST;
-        $this->serverParams = $_SERVER;
-    }
-
     public function getMethod(): string
     {
-        return $this->serverParams['REQUEST_METHOD'] ?? 'GET';
+        return $_SERVER['REQUEST_METHOD'] ?? 'GET';
     }
 
     public function getPath(): string
     {
-        $path = $this->serverParams['REQUEST_URI'] ?? '/';
+        $path = $_SERVER['REQUEST_URI'] ?? '/';
         $position = strpos($path, '?');
         
         if ($position === false) {
@@ -32,32 +21,45 @@ class Request
         return substr($path, 0, $position);
     }
 
+    public function getBody(): array
+    {
+        $body = [];
+        
+        if ($this->getMethod() === 'GET') {
+            foreach ($_GET as $key => $value) {
+                $body[$key] = filter_input(INPUT_GET, $key, FILTER_SANITIZE_SPECIAL_CHARS);
+            }
+        }
+        
+        if ($this->getMethod() === 'POST' || $this->getMethod() === 'PUT' || $this->getMethod() === 'DELETE') {
+            foreach ($_POST as $key => $value) {
+                $body[$key] = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
+            }
+            
+            // Also get JSON input
+            $jsonInput = json_decode(file_get_contents('php://input'), true);
+            if (is_array($jsonInput)) {
+                $body = array_merge($body, $jsonInput);
+            }
+        }
+        
+        return $body;
+    }
+
     public function getQueryParams(): array
     {
-        return $this->queryParams;
-    }
-
-    public function getBodyParams(): array
-    {
-        return $this->bodyParams;
-    }
-
-    public function getJsonBody(): ?array
-    {
-        $input = file_get_contents('php://input');
-        if (empty($input)) {
-            return null;
-        }
-
-        $data = json_decode($input, true);
-        return json_last_error() === JSON_ERROR_NONE ? $data : null;
+        return $_GET;
     }
 
     public function getHeader(string $name): ?string
     {
-        $name = strtoupper(str_replace('-', '_', $name));
-        $key = 'HTTP_' . $name;
-        
-        return $this->serverParams[$key] ?? null;
+        $headers = getallheaders();
+        return $headers[$name] ?? null;
+    }
+
+    public function isJson(): bool
+    {
+        $contentType = $this->getHeader('Content-Type') ?? '';
+        return strpos($contentType, 'application/json') !== false;
     }
 }

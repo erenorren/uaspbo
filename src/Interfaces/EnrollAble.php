@@ -2,7 +2,8 @@
 
 namespace App\Interfaces;
 
-interface Enrollable
+interface EnrollAble
 {
-    public function canEnroll(int $currentEnrolledCount): bool;
+    public function canEnroll(int $currentEnrolled): bool;
+    public function enroll(int $studentId): bool;
 }

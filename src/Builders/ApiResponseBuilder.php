@@ -86,6 +86,7 @@ class ApiResponseBuilder
         exit;
     }
 
+    // Static helper methods
     public static function success($data = null, string $message = 'Success'): self
     {
         return (new self())

@@ -1,118 +1,83 @@
--- db_fixed.sql
+-- Database Schema untuk E-Learning System
+
 CREATE DATABASE IF NOT EXISTS elearning_db;
 USE elearning_db;
 
-CREATE TABLE courses (
+-- Table: users (base table untuk semua user)
+CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    course_code VARCHAR(20) NOT NULL UNIQUE,
-    title VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
-    category VARCHAR(100) NOT NULL,
-    max_students INT NOT NULL DEFAULT 0,
-    current_enrolled INT NOT NULL DEFAULT 0,
-    status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_title (title),
-    INDEX idx_category (category),
-    INDEX idx_course_code (course_code),
-    INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE students (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    student_number VARCHAR(20) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
-    enroll_limit INT DEFAULT 5,
+    role ENUM('student', 'instructor') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_email (email),
+    INDEX idx_role (role)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table: students (extends users)
+CREATE TABLE students (
+    id INT PRIMARY KEY,
+    student_number VARCHAR(20) NOT NULL UNIQUE,
+    FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_student_number (student_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Table: instructors (extends users)
 CREATE TABLE instructors (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    instructor_code VARCHAR(20) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
-    expertise VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_email (email),
-    INDEX idx_instructor_code (instructor_code)
+    id INT PRIMARY KEY,
+    bio TEXT,
+    FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Table: courses
+CREATE TABLE courses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    max_students INT NOT NULL DEFAULT 30,
+    status ENUM('draft', 'published') DEFAULT 'draft',
+    instructor_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (instructor_id) REFERENCES instructors(id) ON DELETE CASCADE,
+    INDEX idx_status (status),
+    INDEX idx_instructor (instructor_id),
+    INDEX idx_title (title)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table: enrollments
 CREATE TABLE enrollments (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    course_id INT NOT NULL,
     student_id INT NOT NULL,
-    enrolled_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP NULL,
+    course_id INT NOT NULL,
+    enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status ENUM('active', 'completed', 'cancelled') DEFAULT 'active',
-    grade DECIMAL(5,2) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE RESTRICT,
-    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE RESTRICT,
-    CONSTRAINT uc_enrollment_student_course UNIQUE (course_id, student_id),
-    INDEX idx_course_id (course_id),
-    INDEX idx_student_id (student_id),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_enrollment (student_id, course_id),
     INDEX idx_status (status),
-    INDEX idx_enrolled_at (enrolled_at)
+    INDEX idx_student (student_id),
+    INDEX idx_course (course_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO instructors (instructor_code, email, password, name, phone, expertise) VALUES
-('INS2024001', 'alice.instructor@elearning.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Alice Instructor', '081200000001', 'Programming'),
-('INS2024002', 'bob.instructor@elearning.com',   '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Bob Instructor',   '081200000002', 'Software Engineering');
+-- Sample Data
+INSERT INTO users (email, password, name, role) VALUES
+('instructor1@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'John Instructor', 'instructor'),
+('student1@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Alice Student', 'student'),
+('student2@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Bob Student', 'student');
 
-INSERT INTO courses (course_code, title, description, category, max_students, current_enrolled, status) VALUES
-('CSE101', 'Dasar Pemrograman', 'Pengenalan dasar logika dan sintaks pemrograman.', 'Programming', 30, 0, 'published'),
-('CSE201', 'OOP dengan PHP', 'Penerapan konsep OOP di PHP untuk membangun REST API.', 'Programming', 25, 0, 'published'),
-('CSE301', 'Design Patterns', 'Pengenalan design patterns umum dalam pengembangan software.', 'Programming', 20, 0, 'draft'),
-('CSE401', 'Software Architecture', 'Membahas arsitektur perangkat lunak modern.', 'Software Engineering', 20, 0, 'published');
+INSERT INTO instructors (id, bio) VALUES
+(1, 'Experienced instructor with 10 years of teaching');
 
-INSERT INTO students (student_number, email, password, name, phone, enroll_limit) VALUES
-('STU20250001', 'student1@elearning.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Udin',  '081210000001', 5),
-('STU20250002', 'student2@elearning.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Nayla', '081210000002', 5),
-('STU20250003', 'student3@elearning.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Tika',  '081210000003', 3);
+INSERT INTO students (id, student_number) VALUES
+(2, 'STD20240001'),
+(3, 'STD20240002');
 
-INSERT INTO enrollments (course_id, student_id, enrolled_at, status) VALUES
-(1, 1, NOW(), 'active'),
-(1, 2, NOW(), 'active'),
-(2, 1, NOW(), 'active'),
-(2, 3, DATE_SUB(NOW(), INTERVAL 60 DAY), 'active');
-
--- TRIGGERS: use DELIMITER directives (works in MySQL CLI)
-DELIMITER //
-
-CREATE TRIGGER trg_after_enrollment_insert
-AFTER INSERT ON enrollments
-FOR EACH ROW
-BEGIN
-    IF NEW.status = 'active' THEN
-        UPDATE courses
-        SET current_enrolled = current_enrolled + 1
-        WHERE id = NEW.course_id;
-    END IF;
-END;
-//
-
-CREATE TRIGGER trg_after_enrollment_update
-AFTER UPDATE ON enrollments
-FOR EACH ROW
-BEGIN
-    IF OLD.status = 'active'
-       AND NEW.status IN ('completed','cancelled') THEN
-        UPDATE courses
-        SET current_enrolled = current_enrolled - 1
-        WHERE id = NEW.course_id;
-    END IF;
-END;
-//
-
-DELIMITER ;
+INSERT INTO courses (title, description, max_students, status, instructor_id) VALUES
+('PHP OOP Fundamentals', 'Learn Object Oriented Programming in PHP', 25, 'published', 1),
+('REST API Development', 'Build RESTful APIs with PHP', 20, 'draft', 1),
+('Database Design', 'Learn relational database design', 30, 'published', 1);

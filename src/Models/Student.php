@@ -7,15 +7,11 @@ use App\Core\Database;
 class Student extends User
 {
     private string $studentNumber;
-    private string $phone;
-    private int $enrollLimit;
 
     protected function fill(array $data): void
     {
         parent::fill($data);
         $this->studentNumber = $data['student_number'] ?? $this->generateStudentNumber();
-        $this->phone = $data['phone'] ?? '';
-        $this->enrollLimit = $data['enroll_limit'] ?? 5;
     }
 
     public function getRole(): string
@@ -25,24 +21,16 @@ class Student extends User
 
     public function validate(): bool
     {
-        $this->clearErrors();
-
-        $this->validateRequired('email', $this->email, 'Email');
-        $this->validateEmail('email', $this->email);
-        $this->validateRequired('name', $this->name, 'Name');
-        $this->validateRequired('phone', $this->phone, 'Phone');
-        $this->validateMinLength('password', $this->password ?? '', 6, 'Password');
-
-        if ($this->enrollLimit <= 0) {
-            $this->addError('enroll_limit', 'Enroll limit must be greater than 0');
-        }
-
+        parent::validate();
+        
+        $this->validateRequired('student_number', $this->studentNumber, 'Student number');
+        
         return !$this->hasErrors();
     }
 
     private function generateStudentNumber(): string
     {
-        return 'STU' . date('Y') . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        return 'STD' . date('Y') . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
     }
 
     protected static function getTableName(): string
@@ -52,64 +40,52 @@ class Student extends User
 
     protected function insert(): bool
     {
-        $db = Database::getInstance()->getConnection();
-        
-        $sql = "INSERT INTO students (student_number, email, password, name, phone, enroll_limit, created_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-        $stmt = $db->prepare($sql);
-        $result = $stmt->execute([
-            $this->studentNumber,
-            $this->email,
-            $this->password,
-            $this->name,
-            $this->phone,
-            $this->enrollLimit,
-            $this->createdAt->format('Y-m-d H:i:s')
-        ]);
-
-        if ($result) {
-            $this->id = (int)$db->lastInsertId();
+        // First insert into users table
+        if (!parent::insert()) {
+            return false;
         }
 
-        return $result;
+        // Then insert into students table
+        $db = Database::getInstance()->getConnection();
+        $sql = "INSERT INTO students (id, student_number) VALUES (?, ?)";
+
+        $stmt = $db->prepare($sql);
+        return $stmt->execute([
+            $this->id,
+            $this->studentNumber
+        ]);
     }
 
     protected function update(): bool
     {
+        // Update users table
+        if (!parent::update()) {
+            return false;
+        }
+
+        // Update students table
         $db = Database::getInstance()->getConnection();
-        
-        $sql = "UPDATE students SET email=?, name=?, phone=?, enroll_limit=?, updated_at=? WHERE id=?";
+        $sql = "UPDATE students SET student_number=? WHERE id=?";
 
         $stmt = $db->prepare($sql);
         return $stmt->execute([
-            $this->email,
-            $this->name,
-            $this->phone,
-            $this->enrollLimit,
-            $this->updatedAt->format('Y-m-d H:i:s'),
+            $this->studentNumber,
             $this->id
         ]);
     }
 
     public function delete(): bool
     {
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("DELETE FROM students WHERE id = ?");
-        return $stmt->execute([$this->id]);
+        // Deleting from users will cascade to students
+        return parent::delete();
     }
 
     public function toArray(): array
     {
         $data = parent::toArray();
         $data['student_number'] = $this->studentNumber;
-        $data['phone'] = $this->phone;
-        $data['enroll_limit'] = $this->enrollLimit;
         return $data;
     }
 
-    // Getters
     public function getStudentNumber(): string { return $this->studentNumber; }
-    public function getPhone(): string { return $this->phone; }
-    public function getEnrollLimit(): int { return $this->enrollLimit; }
 }

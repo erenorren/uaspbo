@@ -1,9 +1,10 @@
 {
-    "name": "elearning/rest-api",
+    "name": "uaspbo/elearning-api",
     "description": "REST API Sistem Manajemen Kursus Online Berbasis PHP OOP",
     "type": "project",
     "require": {
-        "php": ">=8.0"
+        "php": ">=8.0",
+        "ext-pdo": "*"
     },
     "autoload": {
         "psr-4": {
@@ -12,7 +13,7 @@
     },
     "authors": [
         {
-            "name": "E-Learning Team",
+            "name": "Tim E-Learning",
             "email": "team@elearning.com"
         }
     ]

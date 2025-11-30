@@ -19,18 +19,18 @@ class CourseFactory
     public static function createPremiumCourse(array $data): Course
     {
         $defaults = [
-            'max_students' => 10,
+            'max_students' => 15,
             'status' => 'draft'
         ];
 
         return new Course(array_merge($defaults, $data));
     }
 
-    public static function createWorkshopCourse(array $data): Course
+    public static function createPublishedCourse(array $data): Course
     {
         $defaults = [
-            'max_students' => 20,
-            'status' => 'draft'
+            'max_students' => 25,
+            'status' => 'published'
         ];
 
         return new Course(array_merge($defaults, $data));

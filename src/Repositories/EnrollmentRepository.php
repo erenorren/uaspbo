@@ -21,18 +21,24 @@ class EnrollmentRepository
         $stmt->execute([$id]);
         $data = $stmt->fetch();
 
-        return $data ? $this->hydrate($data) : null;
+        if (!$data) {
+            return null;
+        }
+
+        return $this->hydrate($data);
     }
 
     public function findByStudentId(int $studentId): array
     {
-        $stmt = $this->db->prepare("
-            SELECT e.*, c.title as course_title 
-            FROM enrollments e 
-            JOIN courses c ON e.course_id = c.id 
-            WHERE e.student_id = ? 
+        $sql = "
+            SELECT e.*, c.title as course_title, c.description as course_description
+            FROM enrollments e
+            JOIN courses c ON e.course_id = c.id
+            WHERE e.student_id = ?
             ORDER BY e.enrolled_at DESC
-        ");
+        ";
+
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$studentId]);
 
         $enrollments = [];
@@ -51,12 +57,37 @@ class EnrollmentRepository
     public function delete(int $id): bool
     {
         $enrollment = $this->findById($id);
-        return $enrollment ? $enrollment->delete() : false;
+        if (!$enrollment) {
+            return false;
+        }
+
+        return $enrollment->delete();
+    }
+
+    public function findActiveByStudentAndCourse(int $studentId, int $courseId): ?Enrollment
+    {
+        $stmt = $this->db->prepare("
+            SELECT * FROM enrollments 
+            WHERE student_id = ? AND course_id = ? AND status = 'active'
+        ");
+        $stmt->execute([$studentId, $courseId]);
+        $data = $stmt->fetch();
+
+        if (!$data) {
+            return null;
+        }
+
+        return $this->hydrate($data);
     }
 
     private function hydrate(array $data): Enrollment
     {
-        $enrollment = new Enrollment($data);
+        $enrollment = new Enrollment([
+            'student_id' => (int)$data['student_id'],
+            'course_id' => (int)$data['course_id'],
+            'status' => $data['status'],
+            'enrolled_at' => $data['enrolled_at']
+        ]);
         $enrollment->setId((int)$data['id']);
 
         if (isset($data['created_at'])) {

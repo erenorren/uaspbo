@@ -4,64 +4,32 @@ namespace App\Models;
 
 use App\Core\Model;
 use App\Interfaces\Publishable;
+use App\Interfaces\EnrollAble;
 use App\Traits\Validatable;
 use App\Core\Database;
 
-class Course extends Model implements Publishable
+class Course extends Model implements Publishable, EnrollAble
 {
     use Validatable;
 
-    private string $courseCode;
     private string $title;
     private string $description;
-    private string $category;
     private int $maxStudents;
-    private int $currentEnrolled;
     private string $status;
+    private int $instructorId;
 
-    public function __construct(array $data = [])
-    {
-        if (!empty($data)) {
-            $this->fill($data);
-        }
-    }
+    // Constructor sudah diwarisi dari Model
 
-    private function fill(array $data): void
+    protected function fill(array $data): void
     {
-        $this->courseCode = $data['course_code'] ?? '';
         $this->title = $data['title'] ?? '';
         $this->description = $data['description'] ?? '';
-        $this->category = $data['category'] ?? '';
-        $this->maxStudents = $data['max_students'] ?? 0;
-        $this->currentEnrolled = $data['current_enrolled'] ?? 0;
+        $this->maxStudents = $data['max_students'] ?? 30;
         $this->status = $data['status'] ?? 'draft';
+        $this->instructorId = $data['instructor_id'] ?? 0;
     }
 
-    public function validate(): bool
-    {
-        $this->clearErrors();
-
-        $this->validateRequired('course_code', $this->courseCode, 'Course Code');
-        $this->validateRequired('title', $this->title, 'Title');
-        $this->validateRequired('description', $this->description, 'Description');
-        $this->validateRequired('category', $this->category, 'Category');
-
-        if ($this->maxStudents <= 0) {
-            $this->addError('max_students', 'Max students must be greater than 0');
-        }
-
-        if ($this->currentEnrolled < 0) {
-            $this->addError('current_enrolled', 'Current enrolled cannot be negative');
-        }
-
-        $allowedStatuses = ['draft', 'published', 'archived'];
-        if (!in_array($this->status, $allowedStatuses)) {
-            $this->addError('status', 'Status must be one of: ' . implode(', ', $allowedStatuses));
-        }
-
-        return !$this->hasErrors();
-    }
-
+    // Implement Publishable interface
     public function publish(): void
     {
         $this->status = 'published';
@@ -72,24 +40,40 @@ class Course extends Model implements Publishable
         $this->status = 'draft';
     }
 
-    public function archive(): void
-    {
-        $this->status = 'archived';
-    }
-
-    public function canEnroll(): bool
-    {
-        return $this->status === 'published' && $this->currentEnrolled < $this->maxStudents;
-    }
-
     public function isPublished(): bool
     {
         return $this->status === 'published';
     }
 
-    public function getAvailableSlots(): int
+    // Implement EnrollAble interface
+    public function canEnroll(int $currentEnrolled): bool
     {
-        return $this->maxStudents - $this->currentEnrolled;
+        return $this->isPublished() && $currentEnrolled < $this->maxStudents;
+    }
+
+    public function enroll(int $studentId): bool
+    {
+        // Implementation would be in EnrollmentService
+        return true;
+    }
+
+    public function validate(): bool
+    {
+        $this->clearErrors();
+
+        $this->validateRequired('title', $this->title, 'Title');
+        $this->validateRequired('instructor_id', $this->instructorId, 'Instructor');
+        $this->validateMinLength('title', $this->title, 3, 'Title');
+
+        if ($this->maxStudents <= 0) {
+            $this->addError('max_students', 'Max students must be greater than 0');
+        }
+
+        if (!in_array($this->status, ['draft', 'published'])) {
+            $this->addError('status', 'Status must be draft or published');
+        }
+
+        return !$this->hasErrors();
     }
 
     protected static function getTableName(): string
@@ -100,19 +84,16 @@ class Course extends Model implements Publishable
     protected function insert(): bool
     {
         $db = Database::getInstance()->getConnection();
-        
-        $sql = "INSERT INTO courses (course_code, title, description, category, max_students, current_enrolled, status, created_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO courses (title, description, max_students, status, instructor_id, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?)";
 
         $stmt = $db->prepare($sql);
         $result = $stmt->execute([
-            $this->courseCode,
             $this->title,
             $this->description,
-            $this->category,
             $this->maxStudents,
-            $this->currentEnrolled,
             $this->status,
+            $this->instructorId,
             $this->createdAt->format('Y-m-d H:i:s')
         ]);
 
@@ -126,18 +107,16 @@ class Course extends Model implements Publishable
     protected function update(): bool
     {
         $db = Database::getInstance()->getConnection();
-        
-        $sql = "UPDATE courses SET course_code=?, title=?, description=?, category=?, max_students=?, current_enrolled=?, status=?, updated_at=? WHERE id=?";
+        $sql = "UPDATE courses SET title=?, description=?, max_students=?, status=?, instructor_id=?, updated_at=? 
+                WHERE id=?";
 
         $stmt = $db->prepare($sql);
         return $stmt->execute([
-            $this->courseCode,
             $this->title,
             $this->description,
-            $this->category,
             $this->maxStudents,
-            $this->currentEnrolled,
             $this->status,
+            $this->instructorId,
             $this->updatedAt->format('Y-m-d H:i:s'),
             $this->id
         ]);
@@ -154,26 +133,21 @@ class Course extends Model implements Publishable
     {
         return [
             'id' => $this->id,
-            'course_code' => $this->courseCode,
             'title' => $this->title,
             'description' => $this->description,
-            'category' => $this->category,
             'max_students' => $this->maxStudents,
-            'current_enrolled' => $this->currentEnrolled,
-            'available_slots' => $this->getAvailableSlots(),
             'status' => $this->status,
+            'instructor_id' => $this->instructorId,
             'is_published' => $this->isPublished(),
-            'can_enroll' => $this->canEnroll(),
             'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s')
         ];
     }
 
     // Getters
-    public function getCourseCode(): string { return $this->courseCode; }
     public function getTitle(): string { return $this->title; }
-    public function getStatus(): string { return $this->status; }
+    public function getDescription(): string { return $this->description; }
     public function getMaxStudents(): int { return $this->maxStudents; }
-    public function getCurrentEnrolled(): int { return $this->currentEnrolled; }
-    public function getCategory(): string { return $this->category; }
+    public function getStatus(): string { return $this->status; }
+    public function getInstructorId(): int { return $this->instructorId; }
 }

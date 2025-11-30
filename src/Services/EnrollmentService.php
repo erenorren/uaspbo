@@ -28,36 +28,42 @@ class EnrollmentService
 
     public function enrollStudent(int $studentId, int $courseId): Enrollment
     {
-        $course = $this->courseRepository->findById($courseId);
-        if (!$course) {
-            throw new NotFoundException("Course with ID {$courseId} not found");
-        }
-
+        // Validate student exists
         $student = $this->studentRepository->findById($studentId);
         if (!$student) {
             throw new NotFoundException("Student with ID {$studentId} not found");
         }
 
+        // Validate course exists
+        $course = $this->courseRepository->findById($courseId);
+        if (!$course) {
+            throw new NotFoundException("Course with ID {$courseId} not found");
+        }
+
+        // Business rules validation
         if (!$course->isPublished()) {
             throw new BusinessException("Course is not published");
         }
 
-        $currentEnrollments = $this->courseRepository->countEnrollments($courseId);
-        if (!$course->canEnroll($currentEnrollments)) {
+        $enrolledCount = $this->courseRepository->getEnrolledCount($courseId);
+        if (!$course->canEnroll($enrolledCount)) {
             throw new BusinessException("Course is full");
         }
 
-        if ($this->studentRepository->hasActiveEnrollment($studentId, $courseId)) {
+        $isAlreadyEnrolled = $this->courseRepository->isStudentEnrolled($studentId, $courseId);
+        if ($isAlreadyEnrolled) {
             throw new BusinessException("Student is already enrolled in this course");
         }
 
+        // Create enrollment
         $enrollment = new Enrollment([
             'student_id' => $studentId,
-            'course_id' => $courseId
+            'course_id' => $courseId,
+            'status' => 'active'
         ]);
 
         if (!$enrollment->validate()) {
-            throw new ValidationException('Enrollment validation failed', $enrollment->getErrors());
+            throw new ValidationException('Validation failed', $enrollment->getErrors());
         }
 
         $this->enrollmentRepository->save($enrollment);
@@ -65,19 +71,23 @@ class EnrollmentService
         return $enrollment;
     }
 
-    public function completeEnrollment(int $enrollmentId, ?float $grade = null): Enrollment
-{
-    $enrollment = $this->enrollmentRepository->findById($enrollmentId);
+    public function completeEnrollment(int $enrollmentId): Enrollment
+    {
+        $enrollment = $this->enrollmentRepository->findById($enrollmentId);
 
-    if (!$enrollment) {
-        throw new NotFoundException("Enrollment with ID {$enrollmentId} not found");
+        if (!$enrollment) {
+            throw new NotFoundException("Enrollment with ID {$enrollmentId} not found");
+        }
+
+        if ($enrollment->getStatus() !== 'active') {
+            throw new BusinessException("Only active enrollments can be completed");
+        }
+
+        $enrollment->complete();
+        $this->enrollmentRepository->save($enrollment);
+
+        return $enrollment;
     }
-
-    $enrollment->complete($grade);
-    $this->enrollmentRepository->save($enrollment);
-
-    return $enrollment;
-}
 
     public function cancelEnrollment(int $enrollmentId): Enrollment
     {
@@ -85,6 +95,10 @@ class EnrollmentService
 
         if (!$enrollment) {
             throw new NotFoundException("Enrollment with ID {$enrollmentId} not found");
+        }
+
+        if ($enrollment->getStatus() !== 'active') {
+            throw new BusinessException("Only active enrollments can be cancelled");
         }
 
         $enrollment->cancel();

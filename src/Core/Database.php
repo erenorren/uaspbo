@@ -16,7 +16,6 @@ class Database
 
         try {
             $dsn = "mysql:host={$config['host']};dbname={$config['database']};charset={$config['charset']}";
-            
             $this->connection = new PDO(
                 $dsn,
                 $config['username'],
